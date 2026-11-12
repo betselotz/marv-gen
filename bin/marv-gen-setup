@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# marv-gen-setup — install Java, Nextflow, CLI, and all process conda envs
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+PIPELINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENVS_DIR="${PIPELINE_DIR}/envs"
+CACHE="${HOME}/nf-conda-cache"
+NF_ENV="nf-java17"
+
+echo "=========================================="
+echo "  marv-gen setup (one-shot install)"
+echo "=========================================="
+echo "Pipeline: ${PIPELINE_DIR}"
+echo ""
+
+# --- conda available? ---
+if ! command -v conda >/dev/null 2>&1; then
+  echo "ERROR: conda not found. Install Miniconda first:"
+  echo "  https://docs.conda.io/en/latest/miniconda.html"
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$(conda info --base)/etc/profile.d/conda.sh"
+
+# --- 1. Host env: Java 17 + Nextflow ---
+echo "[1/4] Creating host env: ${NF_ENV} (openjdk=17 + nextflow)..."
+if conda env list | grep -qE "^${NF_ENV}\s"; then
+  echo "      already exists — updating..."
+  conda install -y -n "${NF_ENV}" -c conda-forge -c bioconda openjdk=17 nextflow || true
+else
+  conda create -y -n "${NF_ENV}" -c conda-forge -c bioconda openjdk=17 nextflow
+fi
+conda activate "${NF_ENV}"
+echo "      Java: $(java -version 2>&1 | head -1)"
+echo "      Nextflow: $(nextflow -version 2>&1 | head -1 || nextflow -v 2>&1 | head -1)"
+
+# --- 2. CLI on PATH ---
+echo ""
+echo "[2/4] Installing marv-gen CLI..."
+mkdir -p "${HOME}/.local/bin"
+ln -sfn "${PIPELINE_DIR}/bin/marv-gen" "${HOME}/.local/bin/marv-gen"
+chmod +x "${PIPELINE_DIR}/bin/marv-gen" "${PIPELINE_DIR}/bin/marv-gen-setup" 2>/dev/null || true
+if ! echo "$PATH" | grep -q "${HOME}/.local/bin"; then
+  grep -q 'HOME/.local/bin' "${HOME}/.bashrc" 2>/dev/null || \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${HOME}/.bashrc"
+  export PATH="${HOME}/.local/bin:$PATH"
+fi
+echo "      $(command -v marv-gen)"
+
+# --- 3. Ensure env YAML files exist ---
+echo ""
+echo "[3/4] Ensuring process env YAMLs..."
+mkdir -p "${ENVS_DIR}"
+
+# focused treetime
+if [[ ! -f "${ENVS_DIR}/focused_treetime_env.yaml" ]]; then
+cat > "${ENVS_DIR}/focused_treetime_env.yaml" << 'Y'
+name: focused_treetime
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+  - python=3.11
+  - biopython
+  - iqtree
+  - treetime
+Y
+fi
+
+# python analysis / prepare beast
+if [[ ! -f "${ENVS_DIR}/python_analysis_env.yaml" ]]; then
+cat > "${ENVS_DIR}/python_analysis_env.yaml" << 'Y'
+name: python_analysis
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+  - python=3.11
+  - biopython
+  - pandas
+Y
+fi
+
+# beast
+if [[ ! -f "${ENVS_DIR}/beast_env.yaml" ]]; then
+cat > "${ENVS_DIR}/beast_env.yaml" << 'Y'
+name: beast
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+  - beast=1.10.4
+  - python=3.11
+  - biopython
+Y
+fi
+
+# common process tools (create if missing)
+declare -A TOOL_YAMLS=(
+  [fastp_env.yaml]="fastp"
+  [host_removal_env.yaml]="hostile samtools"
+  [mapping_env.yaml]="minimap2 samtools bwa"
+  [ivar_env.yaml]="ivar samtools bcftools"
+  [qualimap_env.yaml]="qualimap"
+  [mafft_env.yaml]="mafft"
+  [iqtree_env.yaml]="iqtree"
+  [treetime_env.yaml]="treetime biopython"
+  [nextclade_env.yaml]="nextclade"
+  [multiqc_env.yaml]="multiqc"
+)
+
+for yaml in "${!TOOL_YAMLS[@]}"; do
+  path="${ENVS_DIR}/${yaml}"
+  if [[ ! -f "$path" ]]; then
+    pkgs="${TOOL_YAMLS[$yaml]}"
+    {
+      echo "name: ${yaml%.yaml}"
+      echo "channels: [conda-forge, bioconda, defaults]"
+      echo "dependencies:"
+      for p in $pkgs; do echo "  - $p"; done
+    } > "$path"
+    echo "      wrote ${yaml}"
+  fi
+done
+
+# --- 4. Pre-build all envs from YAML (one go) ---
+echo ""
+echo "[4/4] Pre-building conda envs from ${ENVS_DIR} (this can take a while)..."
+mkdir -p "${CACHE}"
+shopt -s nullglob
+for yml in "${ENVS_DIR}"/*.yaml "${ENVS_DIR}"/*.yml; do
+  base="$(basename "${yml%.*}")"
+  prefix="${CACHE}/${base}"
+  if [[ -d "${prefix}/conda-meta" ]]; then
+    echo "      SKIP (exists): ${base}"
+    continue
+  fi
+  echo "      CREATE: ${base} -> ${prefix}"
+  conda env create -f "${yml}" -p "${prefix}" || {
+    echo "      WARN: failed ${base} — Nextflow may still create it at runtime"
+  }
+done
+
+echo ""
+echo "=========================================="
+echo "  marv-gen setup COMPLETE"
+echo "=========================================="
+echo "Next steps:"
+echo "  conda activate ${NF_ENV}"
+echo "  marv-gen --input samplesheet.csv"
+echo ""
+echo "Optional BEAST:"
+echo "  marv-gen --input samplesheet.csv --skip_beast false"

@@ -1,0 +1,51 @@
+# Nextflow execution files
+work/
+.nextflow/
+.nextflow.log*
+results/
+.pipeline_info/
+
+# Local input data
+samplesheet.csv
+assets/samplesheet_cache.csv
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.bam
+*.bai
+*.sam
+
+# Generated reference indexes
+*.bt2
+*.bt2l
+*.bwt
+*.amb
+*.ann
+*.pac
+*.sa
+*.fai
+*.mmi
+*.dict
+
+# Large local host references
+reference_genomes/GCA_000001405.28_GRCh38.p13_genomic.fna
+reference_genomes/human_index*
+reference_genomes/bat_index*
+
+# Temporary and cache files
+.conda-cache/
+nf-conda-cache/
+__pycache__/
+*.pyc
+*.tmp
+*.log
+*.bak
+*.bak.*
+.DS_Store
+.~lock*
+*~
+
+# Local environment files
+.env
+.env.*

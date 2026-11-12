@@ -1,0 +1,6 @@
+name: nextclade_env
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - nextclade

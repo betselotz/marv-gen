@@ -1,0 +1,8 @@
+name: protein_env
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.11
+  - biopython
+  - pandas

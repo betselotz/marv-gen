@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# marv-gen — Marburg virus genome analysis pipeline
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+PIPELINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Subcommands: setup | install | help | (default: run pipeline)
+case "${1:-}" in
+  setup|install)
+    shift
+    exec "${SCRIPT_DIR}/marv-gen-setup" "$@"
+    ;;
+  -h|--help|help)
+    cat << USAGE
+marv-gen — Marburg virus (MARV) Illumina VSP analysis pipeline
+
+Usage:
+  marv-gen setup              Install Java 17, Nextflow, CLI, all conda tools
+  marv-gen install            Same as setup
+  marv-gen --input sheet.csv  Run analysis
+  marv-gen --help             This help
+
+Examples:
+  marv-gen setup
+  marv-gen --input samplesheet.csv
+  marv-gen --input samplesheet.csv --skip_beast false
+  marv-gen --input samplesheet.csv -resume
+
+Default profile: conda
+Pipeline root: ${PIPELINE_DIR}
+USAGE
+    if command -v nextflow >/dev/null 2>&1; then
+      nextflow run "${PIPELINE_DIR}/main.nf" --help 2>/dev/null || true
+    fi
+    exit 0
+    ;;
+esac
+
+# Prefer nf-java17 for analysis runs
+if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${HOME}/miniconda3/etc/profile.d/conda.sh"
+  if conda env list 2>/dev/null | grep -qE '^nf-java17\s'; then
+    conda activate nf-java17
+  fi
+elif [[ -f "${HOME}/anaconda3/etc/profile.d/conda.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${HOME}/anaconda3/etc/profile.d/conda.sh"
+  if conda env list 2>/dev/null | grep -qE '^nf-java17\s'; then
+    conda activate nf-java17
+  fi
+fi
+
+ARGS=("$@")
+HAS_PROFILE=0
+for a in "${ARGS[@]}"; do
+  if [[ "$a" == "-profile" || "$a" == --profile=* ]]; then
+    HAS_PROFILE=1
+    break
+  fi
+done
+
+if [[ $HAS_PROFILE -eq 0 ]]; then
+  exec nextflow run "${PIPELINE_DIR}/main.nf" -profile "${NF_PROFILE:-conda}" "${ARGS[@]}"
+else
+  exec nextflow run "${PIPELINE_DIR}/main.nf" "${ARGS[@]}"
+fi

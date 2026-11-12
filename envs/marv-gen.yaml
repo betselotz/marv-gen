@@ -1,0 +1,25 @@
+name: marv-gen
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - biopython
+  - pandas
+  - numpy
+  - matplotlib
+  - fastp
+  - bowtie2
+  - samtools
+  - bcftools
+  - minimap2
+  - ivar
+  - kraken2
+  - multiqc
+  - nextclade
+  - mafft
+  - iqtree
+  - snp-dists
+  - qualimap
+  - bedtools
+  - seqtk

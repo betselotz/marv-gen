@@ -1,0 +1,51 @@
+Name,Type,Minimum,Maximum,Length
+"Cap" region,domain,181,239,59
+alpha-1,helix,63,68,6
+alpha-helix 2,helix,172,180,9
+Amino-terminal helix domain,domain,552,595,44
+Beta-1,strand,19,22,4
+beta-2,strand,26,30,5
+beta-3,strand,46,53,8
+beta-4,strand,70,73,4
+beta-5,strand,78,81,4
+beta-6,strand,84,87,4
+beta-7,strand,89,98,10
+beta-8,strand,102,105,4
+beta-9,strand,119,129,11
+beta-10,strand,135,138,4
+beta-11,strand,142,145,4
+beta-12,strand,149,152,4
+beta-13,strand,159,169,11
+beta-19,strand,515,520,6
+beta-20,strand,544,551,8
+carboxy-terminal helix (HR2 - heptad repeat 2),domain,616,632,17
+Cx6CC motif,domain,602,610,9
+Cysteine residue that links GP1 and GP2,domain,610,610,1
+Cysteine residue that stabilizes GP2 intramolecular linkage,domain,602,602,1
+Cysteine residue that stabilizes GP2 intramolecular linkage,domain,609,609,1
+Furin cleavage site,site,432,435,4
+Fusion domain,domain,514,551,38
+glycosylation site,glycosylation site,94,94,1
+glycosylation site,glycosylation site,171,171,1
+GP1,domain,1,435,435
+GP2,domain,436,681,246
+MR191 contact residue,domain,125,131,7
+MR191 contact residue,domain,97,100,4
+MR191 contact residue,domain,70,72,3
+MR191 contact residue,domain,62,64,3
+MR191 contact residue,domain,95,95,1
+MR191 contact residue,domain,67,67,1
+MR191 contact site,domain,91,91,1
+MR191 contact site,domain,123,123,1
+MR191 interaction site,domain,99,100,2
+MR191 interaction site,domain,154,154,1
+MR191 interaction site,domain,72,72,1
+MR191 interaction site,domain,70,70,1
+MR191 interaction site,domain,128,128,1
+Mucin-like domain,domain,240,435,196
+peptide loop,domain,602,605,4
+peptide loop,domain,610,612,3
+Signal sequence,domain,1,19,19
+wing anchor site,domain,487,498,12
+wing anchor site,domain,469,478,10
+Wing domain,domain,436,500,65

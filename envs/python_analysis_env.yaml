@@ -1,0 +1,3 @@
+name: python_analysis_env
+channels: [conda-forge, bioconda]
+dependencies: [python=3.11, biopython, pandas, matplotlib, numpy]
